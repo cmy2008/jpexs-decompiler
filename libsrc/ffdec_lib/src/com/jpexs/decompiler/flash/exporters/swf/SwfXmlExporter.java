@@ -22,7 +22,10 @@ import com.jpexs.decompiler.flash.helpers.InternalClass;
 import com.jpexs.decompiler.flash.helpers.LazyObject;
 import com.jpexs.decompiler.flash.tags.Tag;
 import com.jpexs.decompiler.flash.tags.UnknownTag;
+import com.jpexs.decompiler.flash.types.annotations.Conditional;
 import com.jpexs.decompiler.flash.types.annotations.Internal;
+import com.jpexs.decompiler.flash.types.annotations.parser.AnnotationParseException;
+import com.jpexs.decompiler.flash.types.annotations.parser.ConditionEvaluator;
 import com.jpexs.helpers.ByteArrayRange;
 import com.jpexs.helpers.Helper;
 import com.jpexs.helpers.ReflectionTools;
@@ -39,6 +42,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.stream.XMLOutputFactory;
@@ -60,8 +64,10 @@ public class SwfXmlExporter {
 
     /**
      * XML export version minor.
+     * 
+     * Version 2 - export only fields that meet conditions
      */
-    public static final int XML_EXPORT_VERSION_MINOR = 1;
+    public static final int XML_EXPORT_VERSION_MINOR = 2;
 
     private static final Logger logger = Logger.getLogger(SwfXmlExporter.class.getName());
 
@@ -114,7 +120,7 @@ public class SwfXmlExporter {
      * @throws XMLStreamException On XML error
      */
     public void exportXml(SWF swf, XMLStreamWriter writer) throws IOException, XMLStreamException {
-        generateXml(writer, "swf", swf, false);
+        generateXml(swf, null, writer, "swf", swf, false);
     }
 
     public List<Field> getSwfFieldsCached(Class cls) {
@@ -167,7 +173,7 @@ public class SwfXmlExporter {
         return cls != null && (cls.isArray() || List.class.isAssignableFrom(cls));
     }
 
-    private void generateXml(XMLStreamWriter writer, String name, Object obj, boolean isListItem) throws XMLStreamException {
+    private void generateXml(SWF swf, Tag currentTag, XMLStreamWriter writer, String name, Object obj, boolean isListItem) throws XMLStreamException {
         Class cls = obj != null ? obj.getClass() : null;
 
         /*if (obj != null && cls == String.class) {
@@ -215,7 +221,7 @@ public class SwfXmlExporter {
             writer.writeStartElement(name);
             int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
-                generateXml(writer, "item", Array.get(value, i), true);
+                generateXml(swf, currentTag, writer, "item", Array.get(value, i), true);
             }
             writer.writeEndElement();
         } else if (obj != null) {
@@ -236,6 +242,11 @@ public class SwfXmlExporter {
                 writer.writeAttribute("_xmlExportMajor", "" + XML_EXPORT_VERSION_MAJOR);
                 writer.writeAttribute("_xmlExportMinor", "" + XML_EXPORT_VERSION_MINOR);
                 writer.writeAttribute("_generator", ApplicationInfo.applicationVerName);
+                swf = (SWF) obj;
+            }
+
+            if (obj instanceof Tag) {
+                currentTag = (Tag) obj;
             }
 
             writer.writeAttribute("type", clazz.getSimpleName());
@@ -250,9 +261,43 @@ public class SwfXmlExporter {
             for (Field f : fields) {
                 //Multiline multilineA = f.getAnnotation(Multiline.class);
 
+                Conditional cond = f.getAnnotation(Conditional.class);
+                if (cond != null) {
+                    ConditionEvaluator ev = new ConditionEvaluator(cond);
+                    try {
+                        Set<String> condFields = ev.getFields();
+                        Map<String, Boolean> fieldMap = new HashMap<>();
+                        for (String sf : condFields) {
+                            try {
+                                Object value = ReflectionTools.getValue(obj, clazz.getField(sf));
+                                if (value instanceof Boolean) {
+                                    fieldMap.put(sf, (Boolean) value);
+                                }
+                                if (value instanceof Integer) {
+                                    int intValue = (Integer) value;
+                                    boolean found = false;
+                                    for (int i : cond.options()) {
+                                        if (i == intValue) {
+                                            found = true;
+                                        }
+                                    }
+                                    fieldMap.put(sf, found);
+                                }
+                            } catch (NoSuchFieldException | IllegalArgumentException | IllegalAccessException ex) {
+                                fieldMap.put(sf, true);
+                            }
+                        }
+                        if (!ev.eval(fieldMap, currentTag.getId())) {
+                            continue;
+                        }
+                    } catch (AnnotationParseException ex) {
+                        logger.log(Level.SEVERE, null, ex);
+                    }
+                }
+
                 try {
                     f.setAccessible(true);
-                    generateXml(writer, f.getName(), f.get(obj), false);
+                    generateXml(swf, currentTag, writer, f.getName(), f.get(obj), false);
                 } catch (IllegalArgumentException | IllegalAccessException ex) {
                     logger.log(Level.SEVERE, null, ex);
                 }
