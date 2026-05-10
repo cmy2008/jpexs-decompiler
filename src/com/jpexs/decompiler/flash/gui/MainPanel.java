@@ -92,6 +92,7 @@ import com.jpexs.decompiler.flash.exporters.settings.SoundExportSettings;
 import com.jpexs.decompiler.flash.exporters.settings.SpriteExportSettings;
 import com.jpexs.decompiler.flash.exporters.settings.SymbolClassExportSettings;
 import com.jpexs.decompiler.flash.exporters.settings.TextExportSettings;
+import com.jpexs.decompiler.flash.exporters.settings.XmlSwfExportSettings;
 import com.jpexs.decompiler.flash.exporters.swf.SwfFlashDevelopExporter;
 import com.jpexs.decompiler.flash.exporters.swf.SwfIntelliJIdeaExporter;
 import com.jpexs.decompiler.flash.exporters.swf.SwfJavaExporter;
@@ -4618,6 +4619,12 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
     public void exportSwfXml(List<TreeItem> items) {
         View.checkAccess();
 
+        
+        XmlExportDialog dialog = new XmlExportDialog(Main.getDefaultDialogsOwner());
+        if (dialog.showExportDialog() != AppDialog.OK_OPTION) {
+            return;
+        }
+                
         Set<SWF> usedOpenables = new LinkedHashSet<>();
         Set<OpenableList> usedOpenableLists = new HashSet<>();
 
@@ -4678,6 +4685,9 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 return;
             }
             selFile = Helper.fixDialogFile(fc.getSelectedFile()).getAbsolutePath();
+            
+            Configuration.lastExportDir.set(new File(selFile).getParentFile().getAbsolutePath());
+            
             if (!selFile.toLowerCase(Locale.ENGLISH).endsWith(".xml")) {
                 selFile = selFile + ".xml";
             }
@@ -4714,7 +4724,8 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 try {
                     new RetryTask(() -> {
                         File outFile = new File(selFile2);
-                        new SwfXmlExporter().exportXml(openable, outFile);
+                        XmlSwfExportSettings settings = new XmlSwfExportSettings(dialog.getEnumValue(ScriptExportMode.class), dialog.getEnumValue(ImageExportMode.class), dialog.getEnumValue(SoundExportMode.class));
+                        new SwfXmlExporter().exportXml(openable, outFile, settings, openable.getExportEventListener(), new GuiAbortRetryIgnoreHandler());
                     }, handler).run();
 
                 } catch (IOException ex) {
@@ -4760,7 +4771,7 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 File selfile = Helper.fixDialogFile(selectedFile);
                 try {
                     try (FileInputStream fis = new FileInputStream(selfile)) {
-                        new SwfXmlImporter().importSwf(swf, fis);
+                        new SwfXmlImporter().importSwf(swf, fis, selfile.getParentFile());
                     }
                     swf.clearAllCache();
                     swf.assignExportNamesToSymbols();
@@ -4769,8 +4780,9 @@ public final class MainPanel extends JPanel implements TreeSelectionListener, Se
                 } catch (IOException ex) {
                     logger.log(Level.SEVERE, null, ex);
                 }
-            }
-        }
+                Main.stopWork();
+            }            
+        }        
     }
 
     public void renameIdentifiers(final Openable openable) {
