@@ -108,14 +108,14 @@
 					<li>font normalizer uses 1024em (#2661)</li>
 					<li>null pointer on null caret in variable marker</li>
 					<li>push commands in as2 left in code (#2654)</li>
-					<li>deadlock on getcharacters vs drawframe (#2492)</li>
+					<li>deadlock on getCharacters vs drawFrame (#2492)</li>
 					<li>nullpointer on as3 deobfuscation</li>
 					<li>as3 deobfuscation - null values instead of registers (#2568, #2665)</li>
 					<li>stackoverflow on circular importassets (#2666)</li>
 					<li>allow add breakpoints on large classes (#2672)</li>
 					<li>unable to reset JNA temp directory (#2675)</li>
 					<li>svg shape export - use proper winding</li>
-					<li>properly normalize fonts in defineedittexts, kerning</li>
+					<li>properly normalize fonts in DefineEditTexts, kerning</li>
 					<li>properly draw edittext border, normalize size</li>
 					<li>illegal argument exception on creating morphshape from svg (#2676)</li>
 					<li>respect nofill argument in shape CLI SVG export (#2681)</li>

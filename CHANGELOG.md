@@ -35,14 +35,14 @@ All notable changes to this project will be documented in this file.
 - font normalizer uses 1024em ([#2661])
 - null pointer on null caret in variable marker
 - push commands in as2 left in code ([#2654])
-- deadlock on getcharacters vs drawframe ([#2492])
+- deadlock on getCharacters vs drawFrame ([#2492])
 - nullpointer on as3 deobfuscation
 - as3 deobfuscation - null values instead of registers ([#2568], [#2665])
 - stackoverflow on circular importassets ([#2666])
 - allow add breakpoints on large classes ([#2672])
 - unable to reset JNA temp directory ([#2675])
 - svg shape export - use proper winding
-- properly normalize fonts in defineedittexts, kerning
+- properly normalize fonts in DefineEditTexts, kerning
 - properly draw edittext border, normalize size
 - illegal argument exception on creating morphshape from svg ([#2676])
 - respect nofill argument in shape CLI SVG export ([#2681])
