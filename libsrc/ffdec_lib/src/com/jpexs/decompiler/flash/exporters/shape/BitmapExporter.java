@@ -423,11 +423,13 @@ public class BitmapExporter extends ShapeExporterBase {
             }
         }
 
+        thickness *= unzoom / (aaScale * SWF.unitDivisor);
+
         if (Configuration.useMinimumStrokeWidth1Px.get()) {
             //display minimum stroke of 1 pixel, no matter how zoomed it is
-            if (thickness * unzoom / aaScale < 1 * SWF.unitDivisor) {
-                thickness = 1 * SWF.unitDivisor / (unzoom / aaScale);
-            }   
+            if (thickness < 1) {
+                thickness = 1;
+            }
         }
                 
         if (joinStyle == BasicStroke.JOIN_MITER) {
