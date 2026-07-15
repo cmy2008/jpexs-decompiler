@@ -218,19 +218,14 @@ public class FontExporter {
         }
 
         List<Integer> reallyExportedGlyphs = new ArrayList<>();
-        Set<Character> processedCharacters = new HashSet<>();
-        //if there are more glyphs for one char (in some weird fonts), use the last glyph            
-        for (int i = shapes.size() - 1; i >= 0; i--) {
-            char c = t.glyphToChar(i);
-            if (!processedCharacters.contains((Character) c)) {
-                reallyExportedGlyphs.add(0, (Integer) i);
-                processedCharacters.add((Character) c);
-            }
+        for (int i = 0; i < shapes.size(); i++) {
+            reallyExportedGlyphs.add(i);
         }
         int glyphCount = 0;
         for (Integer ii : reallyExportedGlyphs) {
             int i = (int) ii;
             char c = t.glyphToChar(i);
+            char exportChar = t.charToGlyph(c) == i ? c : (char) (0xE000 + i);
             SHAPE s = shapes.get(i);
             final List<FPoint[]> contours = new ArrayList<>();
             PathExporter seb = new PathExporter(ShapeTag.WIND_EVEN_ODD, 1, swf, s, null) {
@@ -276,7 +271,7 @@ public class FontExporter {
             };
             seb.export();
 
-            FGlyph g = f.addGlyph(c);
+            FGlyph g = f.addGlyph(exportChar);
             glyphCount++;
             double adv = t.getGlyphAdvance(i);
             if (adv != -1) {

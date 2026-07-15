@@ -619,15 +619,15 @@ public class DualPdfGraphics2D extends Graphics2D implements BlendModeSettable, 
 
                     int calcAdvance = StaticTextTag.getAdvance(font, entry.glyphIndex, textHeight, currentChar, nextChar);
                     int spacing = entry.glyphAdvance - calcAdvance;
-                    char ch = font.glyphToChar(entry.glyphIndex);
+                    char exportChar = getExportChar(font, entry.glyphIndex);
                     if (spacing != 0) {
-                        text.append(currentChar);
+                        text.append(exportChar);
                         drawText(swf, x, y, trans, textColor, existingFonts, fontId, font, text.toString(), textHeight, pdfGraphics);
                         text = new StringBuilder();
                         x = x + deltaX + entry.glyphAdvance;
                         deltaX = 0;
                     } else {
-                        text.append(ch);
+                        text.append(exportChar);
                         deltaX += entry.glyphAdvance;
                     }
 
@@ -692,6 +692,14 @@ public class DualPdfGraphics2D extends Graphics2D implements BlendModeSettable, 
         text = text.replaceAll("\\p{Cc}", " "); //Replace control characters with space
         
         g.drawString(text, (float) x, (float) y);
+    }
+
+    private static char getExportChar(FontTag font, int glyphIndex) {
+        char c = font.glyphToChar(glyphIndex);
+        if (font.charToGlyph(c) == glyphIndex) {
+            return c;
+        }
+        return (char) (0xE000 + glyphIndex);
     }
 
     @Override
