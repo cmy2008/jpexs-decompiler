@@ -1086,6 +1086,9 @@ public abstract class TextTag extends DrawableTag {
             }
             if (rec.styleFlagsHasFont) {
                 font = rec.getFont(swf);
+                if (font == null) {
+                    continue;
+                }
                 fontId = swf.getCharacterId(font);
                 if (exporter.getNormalizedFonts().containsKey(fontId)) {
                     font = exporter.getNormalizedFonts().get(fontId);
